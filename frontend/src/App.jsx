@@ -281,8 +281,45 @@ function AssessmentReport({ report, onClose }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+const LOADING_MESSAGES = [
+  "Connecting to Maya…",
+  "Setting up your interview…",
+  "Almost ready…",
+];
+
+function LoadingScreen({ elapsedMs }) {
+  const [msgIndex, setMsgIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setMsgIndex((i) => (i + 1) % LOADING_MESSAGES.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="loading-screen">
+      <div className="loading-card">
+        <div className="loading-logo">M</div>
+        <p className="loading-message">{LOADING_MESSAGES[msgIndex]}</p>
+        <div className="loading-dots">
+          <span /><span /><span />
+        </div>
+        {elapsedMs > 15000 && (
+          <p className="loading-hint">
+            This may take a moment on first load —<br />our server is waking up.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [started, setStarted]             = useState(false);
+  const [loadingGreeting, setLoadingGreeting] = useState(false);
+  const [greetingStartMs, setGreetingStartMs] = useState(0);
+  const [elapsed, setElapsed]             = useState(0);
   const [messages, setMessages]           = useState([]);
   const [input, setInput]                 = useState("");
   const [waiting, setWaiting]             = useState(false);
@@ -359,17 +396,33 @@ export default function App() {
 
   // ── Chat ───────────────────────────────────────────────────────────────────
 
+  useEffect(() => {
+    if (!loadingGreeting) return;
+    const id = setInterval(() => {
+      setElapsed(Date.now() - greetingStartMs);
+    }, 500);
+    return () => clearInterval(id);
+  }, [loadingGreeting, greetingStartMs]);
+
   async function startInterview() {
-    setStarted(true);
-    setInterviewState("in_progress");
-    setWaiting(true);
+    const startMs = Date.now();
+    setGreetingStartMs(startMs);
+    setLoadingGreeting(true);
     try {
       const reply = await callChat([]);
-      await speakAndShow(reply);
+      setLoadingGreeting(false);
+      setStarted(true);
+      setInterviewState("in_progress");
+      setWaiting(true);
+      try {
+        await speakAndShow(reply);
+      } finally {
+        setWaiting(false);
+      }
     } catch (err) {
+      setLoadingGreeting(false);
+      setStarted(false);
       setError(err.message);
-    } finally {
-      setWaiting(false);
     }
   }
 
@@ -493,6 +546,10 @@ export default function App() {
 
   const micDisabled = waiting || speaking || transcribing || interviewState === "completed";
 
+  if (loadingGreeting) {
+    return <LoadingScreen elapsedMs={elapsed} />;
+  }
+
   if (!started) {
     return (
       <div className="start-screen">
@@ -504,6 +561,7 @@ export default function App() {
             You'll speak with Maya, our AI interviewer, in a short 5-minute voice screening.<br />
             Answer naturally — Maya will ask 4–5 questions and assess your teaching approach.
           </p>
+          {error && <p className="start-error">{error}</p>}
           <button className="start-btn" onClick={startInterview}>
             Start Interview
           </button>
