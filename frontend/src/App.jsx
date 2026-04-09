@@ -11,7 +11,7 @@ async function callChat(messages) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
-    const res = await fetch("http://localhost:8000/chat", {
+    const res = await fetch("https://ai-tutor-screener-backend.onrender.com", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ session_id: SESSION_ID, messages }),
@@ -33,7 +33,7 @@ async function callChat(messages) {
 async function callTranscribe(blob) {
   const formData = new FormData();
   formData.append("file", blob, "recording.webm");
-  const res = await fetch("http://localhost:8000/transcribe", { method: "POST", body: formData });
+  const res = await fetch("https://ai-tutor-screener-backend.onrender.com", { method: "POST", body: formData });
   if (!res.ok) {
     const detail = await res.json().catch(() => ({}));
     throw new Error(detail.detail || `Transcription error: ${res.status}`);
@@ -42,7 +42,7 @@ async function callTranscribe(blob) {
 }
 
 async function callSpeak(text) {
-  const res = await fetch("http://localhost:8000/speak", {
+  const res = await fetch("https://ai-tutor-screener-backend.onrender.com", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),
@@ -55,7 +55,7 @@ async function callSpeak(text) {
 }
 
 async function callAssess(messages) {
-  const res = await fetch("http://localhost:8000/assess", {
+  const res = await fetch("https://ai-tutor-screener-backend.onrender.com", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages }),
