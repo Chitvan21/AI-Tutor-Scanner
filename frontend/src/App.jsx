@@ -146,6 +146,7 @@ function splitIntoChunks(text, maxLen = 500) {
 
 function cleanTextForTTS(text) {
   return text
+    .replace(/Cuemath/gi, "Kyoomath")
     .replace(/!/g, ".")
     .replace(/(\d+)-year-old/g, "$1 year old")
     .replace(/(\d+)-year-olds/g, "$1 year olds")
